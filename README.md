@@ -4,8 +4,8 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/github_username/repo_name">
-    <img src="images/logo.png" alt="Logo">
+  <a href="https://github.com/OasisOfChaos/hexawall">
+    <img src="https://github.com/OasisOfChaos/hexawall/blob/main/Images/title.png" alt="Logo">
   </a>
 
 <h3 align="center">HexaWall</h3>
@@ -14,7 +14,6 @@
     <a href="https://github.com/OasisOfChaos/hexawall">GitHub page</a>
   </p>
 </div>
-
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
@@ -62,7 +61,7 @@ This repo contains all the different projects to make this thing yourself:
 [license-url]: https://github.com/github_username/repo_name/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/linkedin_username
-[product-screenshot]: images/demo.gif
+[product-screenshot]: https://github.com/OasisOfChaos/hexawall/blob/main/Images/demo.gif
 [Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
 [Next-url]: https://nextjs.org/
 [React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
