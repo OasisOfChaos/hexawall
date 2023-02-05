@@ -1,0 +1,338 @@
+﻿@page "/"
+@inject MqttClientServiceProvider MqttServiceProvider
+@inject NavigationManager NavigationManager
+@using HexawallController.Models.Enums
+@using HexawallController.Services
+@using MudBlazor.Utilities
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Text.Json;
+@using System.Text.Json.Serialization;
+@implements IAsyncDisposable
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+	<MudPaper Class="pa-4 mt-4 align-center justify-center mud-width-full" Outlined="true">
+		<MudText Typo="Typo.h5" GutterBottom="true">Current HexaWall&trade; Status</MudText>
+		<WallStatusPanel></WallStatusPanel>
+	</MudPaper>
+
+
+	<MudGrid Spacing="2" Justify="Justify.Center">
+
+		<MudItem xs="12" sm="6">
+			<MudPaper Class="pa-4 mt-4" Outlined="true" Height="125px">
+				<MudText Class="mb-5" Typo="Typo.h5" GutterBottom="true">Wall Power State</MudText>
+				<MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="PowerStateOff">OFF</MudButton>
+				<MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="PowerStateOn">ON</MudButton>
+				<MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="PowerStateStandby">STANDBY</MudButton>
+			</MudPaper>
+		</MudItem>
+
+		<MudItem xs="12" sm="6">
+			<MudPaper Class="pa-4 mt-4" Outlined="true" Height="125px">
+				<MudText Typo="Typo.h5" GutterBottom="true">Wall Brightness</MudText>
+				<MudSlider Value="_ledBrightness" TickMarks="true" Step="5" Min="0" Max="255" Color="Color.Info" ValueChanged="OnBrightnessChanged" T="int">Value: @_ledBrightness.ToString()</MudSlider>
+			</MudPaper>
+		</MudItem>
+
+	</MudGrid>
+
+
+	<MudGrid Spacing="2" Justify="Justify.Center">
+
+		<MudItem xs="12" sm="6">
+			<MudPaper Class="pa-4 mt-4" Outlined="true" Height="220px">
+				<MudText Typo="Typo.h5" GutterBottom="true">Programs</MudText>
+				<MudSelect Label="Select LED Program" Dense="true" HelperText="Choose your animation..."
+						   OffsetY="true" OpenIcon="@Icons.Material.Filled.Animation" AdornmentColor="Color.Secondary" ValueChanged="OnSelectedLedProgramValue" T="LedProgram" Value="@_ledProgram">
+					@foreach (LedProgram item in Enum.GetValues(typeof(LedProgram)))
+					{
+						<MudSelectItem Value="@item">@item</MudSelectItem>
+					}
+				</MudSelect>
+
+				<MudSlider Class="mt-8" Value="_programDelay" TickMarks="true" Step="5" Min="5" Max="100" Color="Color.Info" ValueChanged="OnProgramDelayChanged" T="int">Program Speed Delay: @_programDelay.ToString() ms</MudSlider>
+
+				@*<MudSwitch T="bool" Checked="_cycleState" Label="Random Cycle between Programs" Color="Color.Success" CheckedChanged="HandleCycleCheckedChanged" />*@
+			</MudPaper>
+		</MudItem>
+
+		<MudItem xs="12" sm="6">
+			<MudPaper Class="pa-4 mt-4" Outlined="true" Height="220px">
+				<MudText Typo="Typo.h5" GutterBottom="true">Playlists</MudText>
+
+				<MudGrid Spacing="2" Justify="Justify.Center">
+					<MudItem xs="12" sm="9">
+						<MudSelect Label="Select Playlist" HelperText="Select an optional playlist..." Dense="true"
+								   OffsetY="true" OpenIcon="@Icons.Material.Filled.List" ValueChanged="OnSelectedPlaylistValue" T="string" Value="@_playlistName">
+							@foreach (var item in _playlists)
+							{
+								<MudSelectItem Value="@item">@item</MudSelectItem>
+							}
+						</MudSelect>
+					</MudItem>
+					<MudItem xs="12" sm="3">
+						<MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="CycleProgram" Disabled="@_NoPlaylistLoaded">Next program</MudButton>
+					</MudItem>
+				</MudGrid>
+
+
+				<MudGrid Spacing="2" Justify="Justify.Center">
+					<MudItem xs="12" sm="6">
+						<MudSlider Value="@_minPlaylistDuration" Step="10" Min="10" Max="600" Immediate="false" T="int" ValueChanged="OnMinValueChanged" Color="Color.Info" Disabled="@_NoPlaylistLoaded">Minimum Sequence Duration: @_minPlaylistDuration.ToString()</MudSlider>
+					</MudItem>
+					<MudItem xs="12" sm="6">
+						<MudSlider Value="@_maxPlaylistDuration" Step="10" Min="20" Max="600" Immediate="false" T="int" ValueChanged="OnMaxValueChanged" Color="Color.Info" Disabled="@_NoPlaylistLoaded">Maximum Sequence Duration: @_maxPlaylistDuration.ToString()</MudSlider>
+					</MudItem>
+				</MudGrid>
+
+			</MudPaper>
+		</MudItem>
+	</MudGrid>
+
+
+	<MudPaper Class="pa-4 mt-4" Outlined="true">
+		<MudText Typo="Typo.h5" GutterBottom="true">Solid Color</MudText>
+
+		<MudItem Class="d-flex justify-center">
+			<MudColorPicker DisableToolbar="false" DisableAlpha="true" PickerVariant="PickerVariant.Static" Elevation="0" ValueChanged="OnColorChanged" Value="_ledSolidColor" />
+
+
+			@*<MudColorPicker DisableToolbar="false" DisableAlpha="true" PickerVariant="PickerVariant.Static" Elevation="0" ValueChanged="OnColorChanged" Value="_ledSolidColor" />*@
+			@*<MudColorPicker DisableToolbar="false" DisableAlpha="true" PickerVariant="PickerVariant.Static" Elevation="0" Value="_ledSolidColor" />*@
+		</MudItem>
+
+		<MudItem Class="d-flex justify-center">
+			<MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="SetSolidColor">Apply</MudButton>
+		</MudItem>
+	</MudPaper>
+
+	<MudPaper Class="pa-4 mt-4" Outlined="true">
+		<MudText Typo="Typo.h5" GutterBottom="true">Internal LED Blinking State</MudText>
+		<MudSwitch T="bool" Checked="_blinkState" Label="LED Power State" Color="Color.Success" CheckedChanged="HandleBlinkCheckedChanged" />
+	</MudPaper>
+
+	<MudPaper Class="pa-4 mt-4" Outlined="true">
+		<MudText Typo="Typo.h5" GutterBottom="true">Reboot ESP32</MudText>
+		<MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="RebootEsp">Reboot the ESP32</MudButton>
+	</MudPaper>
+
+</MudContainer>
+
+@code {
+	private HubConnection hubConnection;
+
+	private bool _cycleState { get; set; }
+	private bool _blinkState { get; set; }
+	private LedProgram _ledProgram { get; set; }
+	private int _ledBrightness = 255;
+	private int _programDelay = 30;
+	private MudColor _ledSolidColor;
+	private string _playlistName { get; set; } = "No Playlist";
+	private List<string> _playlists { get; set; } = Playlist.Playlists;
+	private int _minPlaylistDuration { get; set; } = 60;
+	private int _maxPlaylistDuration { get; set; } = 240;
+	private bool _NoPlaylistLoaded { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		hubConnection = new HubConnectionBuilder()
+			.WithUrl(NavigationManager.ToAbsoluteUri("/notificationhub"))
+			.Build();
+
+		hubConnection.On<string, string>("NotifyBrightnessValue", (topic, message) =>
+		{
+			_ledBrightness = int.Parse(message);
+			StateHasChanged();
+		});
+
+		hubConnection.On<string, string>("NotifyRgbValue", (topic, message) =>
+		{
+			var rgb = message.Split(",");
+			_ledSolidColor = new MudColor(int.Parse(rgb[0]), int.Parse(rgb[1]), int.Parse(rgb[2]), 255);
+			StateHasChanged();
+		});
+
+		hubConnection.On<string, string>("NotifyProgramValue", (topic, message) =>
+		{
+			_ledProgram = (LedProgram)(int.Parse(message));
+			StateHasChanged();
+		});
+
+		hubConnection.On<string, string>("NotifyPlaylistValue", (topic, message) =>
+		{
+			_playlistName = Playlist.PlaylistName(message);
+			int index = _playlists.IndexOf(_playlistName);
+			_NoPlaylistLoaded = index == 0;
+
+			StateHasChanged();
+		});
+
+		//hubConnection.On<string, string>("NotifyStatus", (topic, message) =>
+		//{
+		//    StatusMessage statusMessage = new StatusMessage(message);
+
+		//    _ledBrightness = statusMessage.LedBrightness;
+		//    //_cycleState = statusMessage.CycleProgramActive;
+		//    _ledProgram = statusMessage.LedProgram;
+		//    _playlistName = statusMessage.CurrentPlaylist;
+
+		//    int index = _playlists.IndexOf(_playlistName);
+		//    _NoPlaylistLoaded = index == 0;
+
+		//    _minPlaylistDuration = statusMessage.MinPlaylistDuration;
+		//    _maxPlaylistDuration = statusMessage.MaxPlaylistDuration;
+
+		//    StateHasChanged();
+		//});
+
+		//hubConnection.On<string, string>("NotifyPlaylistList", (topic, message) =>
+		//{
+		//    var doc = JsonDocument.Parse(message);
+
+		//    _playlists.Clear();
+		//    //_playlists.Add("No playlist");
+
+		//    var myStringList = doc.RootElement.GetProperty("playlists");
+		//    for (var i = 0; i < myStringList.GetArrayLength(); i++)
+		//    {
+		//        _playlists.Add(myStringList[i].GetProperty("name").GetString());
+		//    }
+		//    //Console.WriteLine(string.Join(", ", _playlists));
+
+		//    StateHasChanged();
+		//});
+
+		await hubConnection.StartAsync();
+
+		//await MqttServiceProvider.MqttClientService.RequestPlaylists();
+		await MqttServiceProvider.MqttClientService.RequestStatus();
+	}
+
+	public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+
+	private void StateChanged(string message)
+	{
+		//StatusMessage statusMessage = new StatusMessage(message);
+
+		//var encodedMsg = $"{message}";
+		//messages.Add(statusMessage);
+
+		StateHasChanged();
+	}
+
+	public async ValueTask DisposeAsync()
+	{
+		if (hubConnection is not null)
+		{
+			await hubConnection.DisposeAsync();
+		}
+	}
+
+
+	//private void HandlePowerCheckedChanged(bool isChecked)
+	//{
+	//    _powerState = isChecked;
+
+	//    MqttServiceProvider.MqttClientService.SetPowerState(_powerState);
+	//}
+
+	private void OnSelectedLedProgramValue(LedProgram program)
+	{
+		_ledProgram = program;
+
+		MqttServiceProvider.MqttClientService.SetLEDProgram(_ledProgram);
+	}
+
+	private void OnColorChanged(MudColor color)
+	{
+		_ledSolidColor = color;
+		//MqttServiceProvider.MqttClientService.SetLEDSolidProgramColor(color);
+	}
+
+	void OnBrightnessChanged(int value)
+	{
+		_ledBrightness = value;
+
+		MqttServiceProvider.MqttClientService.SetLEDBrightness(_ledBrightness);
+	}
+
+	void OnProgramDelayChanged(int value)
+	{
+		_programDelay = value;
+
+		MqttServiceProvider.MqttClientService.SetLEDProgramDelay(_programDelay);
+	}
+
+	private void OnMinValueChanged(int value)
+	{
+		_minPlaylistDuration = value;
+		if (_maxPlaylistDuration < _minPlaylistDuration)
+		{
+			_maxPlaylistDuration = _minPlaylistDuration + 10;
+		}
+	}
+
+	private void OnMaxValueChanged(int value)
+	{
+		_maxPlaylistDuration = value;
+
+		if (_minPlaylistDuration > _maxPlaylistDuration)
+		{
+			_minPlaylistDuration = _maxPlaylistDuration - 10;
+		}
+
+		MqttServiceProvider.MqttClientService.SetProgramDuration(_minPlaylistDuration, _maxPlaylistDuration);
+	}
+
+	private void HandleCycleCheckedChanged(bool isChecked)
+	{
+		_cycleState = isChecked;
+
+		MqttServiceProvider.MqttClientService.EnableProgramCycle(_cycleState);
+	}
+
+	private void HandleBlinkCheckedChanged(bool isChecked)
+	{
+		_blinkState = isChecked;
+
+		MqttServiceProvider.MqttClientService.SetLEDBlinkState(_blinkState);
+	}
+
+	private void RebootEsp()
+	{
+		MqttServiceProvider.MqttClientService.RebootEsp();
+	}
+
+	private void PowerStateOff()
+	{
+		MqttServiceProvider.MqttClientService.SetPowerState(CommandPowerState.PowerOff);
+	}
+
+	private void PowerStateOn()
+	{
+		MqttServiceProvider.MqttClientService.SetPowerState(CommandPowerState.PowerOn);
+	}
+
+	private void SetSolidColor()
+	{
+		MqttServiceProvider.MqttClientService.SetLEDSolidProgramColor(_ledSolidColor);
+	}
+
+	private void PowerStateStandby()
+	{
+		MqttServiceProvider.MqttClientService.SetPowerState(CommandPowerState.Standby);
+	}
+
+	private void CycleProgram()
+	{
+		MqttServiceProvider.MqttClientService.CycleProgram();
+	}
+
+	private void OnSelectedPlaylistValue(string value)
+	{
+		_playlistName = value;
+
+		int index = _playlists.IndexOf(value);
+		MqttServiceProvider.MqttClientService.LoadPlaylist(index);
+	}
+}

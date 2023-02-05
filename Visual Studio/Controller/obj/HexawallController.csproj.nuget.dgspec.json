@@ -1,0 +1,86 @@
+{
+  "format": 1,
+  "restore": {
+    "G:\\Project\\Hybrids\\HexaWall\\Visual Studio\\Controller\\v2\\HexawallController.csproj": {}
+  },
+  "projects": {
+    "G:\\Project\\Hybrids\\HexaWall\\Visual Studio\\Controller\\v2\\HexawallController.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "G:\\Project\\Hybrids\\HexaWall\\Visual Studio\\Controller\\v2\\HexawallController.csproj",
+        "projectName": "HexawallController",
+        "projectPath": "G:\\Project\\Hybrids\\HexaWall\\Visual Studio\\Controller\\v2\\HexawallController.csproj",
+        "packagesPath": "C:\\Users\\lix\\.nuget\\packages\\",
+        "outputPath": "G:\\Project\\Hybrids\\HexaWall\\Visual Studio\\Controller\\v2\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\lix\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "dependencies": {
+            "MQTTnet": {
+              "target": "Package",
+              "version": "[3.1.2, )"
+            },
+            "Microsoft.AspNetCore.SignalR.Client": {
+              "target": "Package",
+              "version": "[6.0.3, )"
+            },
+            "MudBlazor": {
+              "target": "Package",
+              "version": "[6.0.8, )"
+            },
+            "System.Text.Json": {
+              "target": "Package",
+              "version": "[6.0.2, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.302\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

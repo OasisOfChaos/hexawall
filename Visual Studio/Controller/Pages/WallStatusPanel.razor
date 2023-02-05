@@ -1,0 +1,174 @@
+﻿@page "/WallStatusPanel"
+@inject MqttClientServiceProvider MqttServiceProvider
+@inject NavigationManager NavigationManager
+@using HexawallController.Models
+@using HexawallController.Models.Enums
+@using HexawallController.Services
+@using Microsoft.AspNetCore.SignalR.Client
+@using MudBlazor.Utilities
+@using System.Timers
+@implements IAsyncDisposable
+
+<div class="d-flex flex-grow-1 gap-4">
+	<MudPaper Class="flex-1 d-flex" Elevation="0">
+		<MudList>
+			<MudListItem Avatar="@Icons.Material.Filled.PowerSettingsNew" IconColor="Color.Primary">
+				@_powerState
+			</MudListItem>
+			<MudListItem Avatar="@Icons.Filled.Animation" IconColor="Color.Primary">
+				@_ledProgram
+			</MudListItem>
+		</MudList>
+	</MudPaper>
+
+	<MudPaper Class="flex-1 d-flex" Elevation="0">
+		<MudList>
+			<MudListItem Avatar="@Icons.Material.Filled.Brightness5" IconColor="Color.Primary">
+				@_ledBrightness
+			</MudListItem>
+			<MudListItem Avatar="@Icons.Material.Filled.List" IconColor="Color.Primary">
+				@_playlist
+			</MudListItem>
+		</MudList>
+	</MudPaper>
+</div>
+
+@*<MudGrid>*@
+
+@*<MudPaper Class="d-flex align-center justify-center mud-width-full py-8" Height="300px">*@
+@*<MudList>
+	<MudListItem Avatar="@Icons.Material.Filled.PowerSettingsNew" IconColor="Color.Primary">
+	@_powerState
+	</MudListItem>
+	<MudDivider DividerType="DividerType.Inset" />
+	<MudListItem Avatar="@Icons.Filled.Animation" IconColor="Color.Primary">
+	@_ledProgram
+	</MudListItem>
+	<MudDivider DividerType="DividerType.Inset" />
+	<MudListItem Avatar="@Icons.Material.Filled.Brightness5" IconColor="Color.Primary">
+	@_ledBrightness
+	</MudListItem>
+	<MudDivider DividerType="DividerType.Inset" />
+	<MudListItem Avatar="@Icons.Material.Filled.List" IconColor="Color.Primary">
+	@_playlist
+	</MudListItem>
+	</MudList>*@
+@*</MudPaper>*@
+
+
+@*<MudItem xs="8">
+	<MudPaper Class="d-flex align-center justify-center mud-width-full py-8" MaxHeight="300px" Height="300px">
+
+	<MudList Clickable="true" Dense="true">
+	@foreach (var message in messages.OrderByDescending(a => a.Timestamp).Take(5))
+	{
+	var s = $"{message.Timestamp}: {message.Json}";
+
+	<MudListItem Text="@s" />
+	}
+	</MudList>
+
+	</MudPaper>
+	</MudItem>*@
+@*</MudGrid>*@
+
+
+@code {
+	private HubConnection hubConnection;
+	private List<StatusMessage> messages = new();
+	private Timer _secondTimer = new Timer(1000);
+	private int _runtime = 0;
+	private int _clocktick = 0;
+	private string _playlistName = "";
+
+	private string _powerState = "Unknown";
+	private string _ledProgram = "Unknown";
+	private string _ledBrightness = "Unknown";
+	private string _playlist = "Unknown";
+	private string _runtimeRemaining = "Unknown";
+
+	protected override async Task OnInitializedAsync()
+	{
+		hubConnection = new HubConnectionBuilder()
+			.WithUrl(NavigationManager.ToAbsoluteUri("/notificationhub"))
+			.Build();
+
+		hubConnection.On<string, string>("NotifyLightValue", (topic, message) =>
+		{
+			_powerState = message;
+			StateChanged(topic, message);
+		});
+
+		hubConnection.On<string, string>("NotifyBrightnessValue", (topic, message) =>
+		{
+			_ledBrightness = message;
+			StateChanged(topic, message);
+		});
+
+		hubConnection.On<string, string>("NotifyProgramValue", (topic, message) =>
+		{
+			_ledProgram = ((LedProgram)(int.Parse(message))).ToString();
+			StateChanged(topic, message);
+		});
+
+		hubConnection.On<string, string>("NotifyPlaylistValue", (topic, message) =>
+		{
+			_playlist = Playlist.PlaylistName(message);
+			_playlistName = _playlist;
+			StateChanged(topic, message);
+		});
+
+		hubConnection.On<string, string>("NotifyPlaylistRuntimeValue", (topic, message) =>
+		{
+			if (int.TryParse(message, out int runtime))
+			{
+				_secondTimer.Stop();
+				_secondTimer.Start();
+
+				_runtime = runtime;
+				_clocktick = 0;
+			}
+		});
+
+
+		_secondTimer.Elapsed += new ElapsedEventHandler(DisplayTimeEvent);
+
+		await hubConnection.StartAsync();
+	}
+
+	public void DisplayTimeEvent(object source, ElapsedEventArgs e)
+	{
+		var remaining = _runtime - _clocktick;
+		if(remaining < 0)
+		{
+			_secondTimer.Stop();
+			return;
+		}
+
+		_playlist = $"{_playlistName} ({remaining} seconds remaining)";
+
+		_clocktick++;
+
+		InvokeAsync(() => StateHasChanged());
+	}
+
+	private void StateChanged(string topic, string message)
+	{
+		//StatusMessage statusMessage = new StatusMessage(message);
+
+		//var encodedMsg = $"{message}";
+		//messages.Add(statusMessage);
+
+		StateHasChanged();
+	}
+
+	public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+
+	public async ValueTask DisposeAsync()
+	{
+		if (hubConnection is not null)
+		{
+			await hubConnection.DisposeAsync();
+		}
+	}
+}

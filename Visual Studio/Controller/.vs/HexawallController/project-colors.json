@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "0ba53e39-a984-4a2f-b0c6-8ce934151a7d": {
+      "ProjectGuid": "0ba53e39-a984-4a2f-b0c6-8ce934151a7d",
+      "DisplayName": "HexawallController",
+      "ColorIndex": 0
+    }
+  },
+  "NextColorIndex": 1
+}

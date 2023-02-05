@@ -1,0 +1,12 @@
+﻿@font-face {
+    font-family: "HeXkEy";
+    src: url("/HeXkEy/HeXkEy.eot");
+    src: url("/HeXkEy/HeXkEy.eot?#iefix") format("embedded-opentype"), url("/HeXkEy/HeXkEy.woff2") format("woff2"), url("/HeXkEy/HeXkEy.woff") format("woff"), url("/HeXkEy/HeXkEy.ttf") format("truetype"), url("/HeXkEy/HeXkEy.svg#HeXkEy") format("svg");
+}
+
+.pagetitle {
+    font-family: HeXkEy;
+    font-size: 50pt;
+    margin-top: 28px;
+    margin-left: 20px;
+}
