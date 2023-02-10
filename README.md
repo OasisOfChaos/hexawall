@@ -42,6 +42,7 @@ This repo contains all the different projects to make this thing yourself:
 
 ### All this is provided as-is. I will not be able to contribute to this project in the future. Use what you like!
 
+### A Reddit post contains some extra info: (https://www.reddit.com/r/FastLED/comments/10ue1d8/my_hexawall_project/)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
